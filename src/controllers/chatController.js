@@ -14,8 +14,8 @@ const dynamodb = new AWS.DynamoDB.DocumentClient();
 exports.createChat = async (req, res) => {
 
   const body = req.body
-  const { user1, user2 } = body;
-  const chat = new Chat(user1, user2);
+  const { user_id } = body;
+  const chat = new Chat(user_id);
   console.log('chat',chat)
   const params = {
     TableName: 'chats',
@@ -42,11 +42,11 @@ exports.getChats =  async (req,res) => {
 };
 // Get a chat by chatId
 exports.getChat = (req, res) => {
-  const { chatId } = req.params;
+  const { chat_id } = req.params;
   const params = {
     TableName: 'chats',
     Key: {
-      chat_id: chatId
+      chat_id: chat_id
     }
   };
 
@@ -65,23 +65,26 @@ exports.getChat = (req, res) => {
 };
 // Get chats by userId
 exports.getUserChats = (req, res) => {
-  const { userId } = req.params;
+  const { user_id } = req.params;
+  // query Global Secondary Index
   const params = {
     TableName: 'chats',
-    Key: {
-      user_id: userId
+    IndexName: 'user_id-index',
+    KeyConditionExpression: 'user_id = :user_id',
+    ExpressionAttributeValues: {
+      ':user_id': user_id
     }
   };
 
-  dynamodb.get(params, (err, data) => {
+  dynamodb.query(params, (err, data) => {
     if (err) {
-      console.error('Error getting chat:', err);
-      res.status(500).json({ error: 'Error getting chat' });
+      console.error('Error getting chats:', err);
+      res.status(500).json({ error: 'Error getting chats' });
     } else {
-      if (!data.Item) {
-        res.status(404).json({ error: 'Chat not found' });
+      if (data.Items.length === 0) {
+        res.status(404).json({ error: 'No Chats found' });
       } else {
-        res.status(200).json(data.Item);
+        res.status(200).json(data.Items);
       }
     }
   });
@@ -89,18 +92,17 @@ exports.getUserChats = (req, res) => {
 
 // Update a chat
 exports.updateChat = (req, res) => {
-  const { chatId } = req.params;
-  const { user1, user2 } = req.body;
+  const { chat_id } = req.params;
+  const { user_id } = req.body; 
 
   const params = {
     TableName: 'chats',
     Key: {
-      chat_id: chatId
+      chat_id: chat_id
     },
-    UpdateExpression: 'set user1 = :u1, user2 = :u2',
+    UpdateExpression: 'set user_id = :uid', 
     ExpressionAttributeValues: {
-      ':u1': user1,
-      ':u2': user2
+      ':uid': user_id
     },
     ReturnValues: 'ALL_NEW'
   };
@@ -115,23 +117,23 @@ exports.updateChat = (req, res) => {
   });
 };
 
+
 // Delete a chat
 exports.deleteChat = (req, res) => {
-  const { chatId } = req.params;
+  const { chat_id } = req.params;
 
   const params = {
     TableName: 'chats',
     Key: {
-      chat_id: chatId
+      chat_id: chat_id
     }
   };
-
   dynamodb.delete(params, (err, data) => {
     if (err) {
       console.error('Error deleting chat:', err);
       res.status(500).json({ error: 'Error deleting chat' });
     } else {
-      res.status(204).send();
+      res.status(204).send("Deleted successfully");
     }
   });
 };
