@@ -3,10 +3,10 @@ const messageController = require('../controllers/messageController');
 
 const router = express.Router();
 
-router.post('/messages', messageController.createMessage);
-router.get('/messages/:chatId', messageController.getChatMessages);
-router.get('/messages/:messageId', messageController.getMessage);
-router.put('/messages/:messageId', messageController.updateMessage);
-router.delete('/messages/:messageId', messageController.deleteMessage);
+router.post('/', messageController.createMessage);
+router.get('/:chatId', messageController.getChatMessages);
+router.get('/message/:messageId', messageController.getMessage);
+router.put('/:messageId', messageController.updateMessage);
+router.delete('/:messageId', messageController.deleteMessage);
 
 module.exports = router;
